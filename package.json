@@ -1,0 +1,27 @@
+{
+  "name": "forkjoin",
+  "version": "0.0.0",
+  "description": "Fork/Join primitives for async programming (experimental)",
+  "main": "forkjoin.js",
+  "scripts": {
+    "test": "coffee test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lo5/forkjoin.git"
+  },
+  "keywords": [
+    "fork",
+    "join",
+    "async",
+    "futures",
+    "promises",
+    "parallel"
+  ],
+  "author": "Prithvi Prabhu <prithvi.prabhu@gmail.com> (http://lofi.in/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lo5/forkjoin/issues"
+  },
+  "homepage": "https://github.com/lo5/forkjoin"
+}
