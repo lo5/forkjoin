@@ -201,3 +201,40 @@ test 'collect - failing futures', (t) ->
 
   wordLengths (error, wordLengths) ->
     t.equal error.message, 'meh'
+
+
+test 'complicated example', (t) ->
+  t.plan 1
+
+  tokenize = fj.task fj.async (sentence) ->
+    sentence.split /\s+/g
+
+  countWords = fj.task fj.async (words) -> 
+    countMap = {}
+    for word in words
+      countMap[word] = if word of countMap then countMap[word] + 1 else 1
+    countMap
+
+  combineCounts = fj.task fj.async (countMaps) ->
+    counts = {}
+    for countMap in countMaps
+      for word, count of countMap
+        counts[word] = if word of counts then counts[word] + count else count
+    counts
+
+  sentences = [
+    'hello world bye world'
+    'hello forkjoin goodbye forkjoin'
+  ]
+
+  allCounts = combineCounts fj.collect (countWords tokenize sentence for sentence in sentences)
+
+  allCounts (error, counts) ->
+    t.deepEqual counts,
+      hello: 2
+      world: 2
+      bye: 1
+      forkjoin: 2
+      goodbye: 1
+
+

@@ -3,7 +3,7 @@ isFunction = (f) -> 'function' is typeof f
 
 isFuture = (a) -> if a?.isFuture then yes else no
 
-fork = (f, args) ->
+fork = (f, args=[]) ->
   throw new Error "Not a function." unless isFunction f
   self = (go) ->
     hasContinuation = isFunction go
@@ -92,7 +92,7 @@ async = (f) ->
       go error
 
 seq = (_futures) ->
-  (go) ->
+  fork (go) ->
     futures = _futures.slice 0
     results = [] 
     next = ->
@@ -111,7 +111,7 @@ seq = (_futures) ->
     return
 
 collect = (futures) ->
-  (go) ->
+  fork (go) ->
     tasks = for future, i in futures
       index: i
       future: future
