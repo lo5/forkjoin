@@ -277,4 +277,52 @@
     });
   });
 
+  test('complicated example', function(t) {
+    var allCounts, combineCounts, countWords, sentence, sentences, tokenize;
+    t.plan(1);
+    tokenize = fj.task(fj.async(function(sentence) {
+      return sentence.split(/\s+/g);
+    }));
+    countWords = fj.task(fj.async(function(words) {
+      var countMap, j, len, word;
+      countMap = {};
+      for (j = 0, len = words.length; j < len; j++) {
+        word = words[j];
+        countMap[word] = word in countMap ? countMap[word] + 1 : 1;
+      }
+      return countMap;
+    }));
+    combineCounts = fj.task(fj.async(function(countMaps) {
+      var count, countMap, counts, j, len, word;
+      counts = {};
+      for (j = 0, len = countMaps.length; j < len; j++) {
+        countMap = countMaps[j];
+        for (word in countMap) {
+          count = countMap[word];
+          counts[word] = word in counts ? counts[word] + count : count;
+        }
+      }
+      return counts;
+    }));
+    sentences = ['hello world bye world', 'hello forkjoin goodbye forkjoin'];
+    allCounts = combineCounts(fj.collect((function() {
+      var j, len, results;
+      results = [];
+      for (j = 0, len = sentences.length; j < len; j++) {
+        sentence = sentences[j];
+        results.push(countWords(tokenize(sentence)));
+      }
+      return results;
+    })()));
+    return allCounts(function(error, counts) {
+      return t.deepEqual(counts, {
+        hello: 2,
+        world: 2,
+        bye: 1,
+        forkjoin: 2,
+        goodbye: 1
+      });
+    });
+  });
+
 }).call(this);

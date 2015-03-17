@@ -17,6 +17,9 @@
 
   fork = function(f, args) {
     var self;
+    if (args == null) {
+      args = [];
+    }
     if (!isFunction(f)) {
       throw new Error("Not a function.");
     }
@@ -144,7 +147,7 @@
   };
 
   seq = function(_futures) {
-    return function(go) {
+    return fork(function(go) {
       var futures, next, results;
       futures = _futures.slice(0);
       results = [];
@@ -165,11 +168,11 @@
         }
       };
       next();
-    };
+    });
   };
 
   collect = function(futures) {
-    return function(go) {
+    return fork(function(go) {
       var future, i, resultCount, results, settled, tasks;
       tasks = (function() {
         var j, len, results1;
@@ -204,7 +207,7 @@
           }
         });
       });
-    };
+    });
   };
 
   forkjoin = {
