@@ -231,6 +231,28 @@
     });
   });
 
+  test('get attribute', function(t) {
+    var actual, compute, square;
+    t.plan(2);
+    compute = fj.task(function(value, go) {
+      return go(null, {
+        foo: {
+          bar: {
+            baz: value
+          }
+        }
+      });
+    });
+    square = fj.task(fj.async(function(a) {
+      return a * a;
+    }));
+    actual = square(fj.get(compute(10), 'foo', 'bar', 'baz'));
+    return actual(function(error, value) {
+      t.equal(error, null);
+      return t.equal(value, 100);
+    });
+  });
+
   test('seq - failing futures', function(t) {
     var i, lengthOf, wordAt, wordLengths, words;
     t.plan(1);
@@ -277,8 +299,8 @@
     });
   });
 
-  test('complicated example', function(t) {
-    var allCounts, combineCounts, countWords, sentence, sentences, tokenize;
+  test('wordcount example', function(t) {
+    var allCounts, combineCounts, countWords, sentences, tokenize;
     t.plan(1);
     tokenize = fj.task(fj.async(function(sentence) {
       return sentence.split(/\s+/g);
@@ -305,15 +327,9 @@
       return counts;
     }));
     sentences = ['hello world bye world', 'hello forkjoin goodbye forkjoin'];
-    allCounts = combineCounts(fj.collect((function() {
-      var j, len, results;
-      results = [];
-      for (j = 0, len = sentences.length; j < len; j++) {
-        sentence = sentences[j];
-        results.push(countWords(tokenize(sentence)));
-      }
-      return results;
-    })()));
+    allCounts = combineCounts(fj.map(sentences, function(sentence) {
+      return countWords(tokenize(sentence));
+    }));
     return allCounts(function(error, counts) {
       return t.deepEqual(counts, {
         hello: 2,

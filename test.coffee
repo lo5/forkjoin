@@ -176,6 +176,21 @@ test 'collect', (t) ->
     t.equal error, null
     t.deepEqual wordLengths, [ 3, 4, 5 ]
 
+test 'get attribute', (t) ->
+  t.plan 2
+
+  compute = fj.task (value, go) -> go null,
+    foo:
+      bar:
+        baz: value
+
+  square = fj.task fj.async (a) -> a * a
+
+  actual = square fj.get (compute 10), 'foo', 'bar', 'baz'
+
+  actual (error, value) ->
+    t.equal error, null
+    t.equal value, 100
 
 test 'seq - failing futures', (t) ->
   t.plan 1
@@ -203,7 +218,7 @@ test 'collect - failing futures', (t) ->
     t.equal error.message, 'meh'
 
 
-test 'complicated example', (t) ->
+test 'wordcount example', (t) ->
   t.plan 1
 
   tokenize = fj.task fj.async (sentence) ->
@@ -227,7 +242,8 @@ test 'complicated example', (t) ->
     'hello forkjoin goodbye forkjoin'
   ]
 
-  allCounts = combineCounts fj.collect (countWords tokenize sentence for sentence in sentences)
+  allCounts = combineCounts fj.map sentences, (sentence) ->
+    countWords tokenize sentence
 
   allCounts (error, counts) ->
     t.deepEqual counts,
