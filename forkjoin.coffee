@@ -3,6 +3,12 @@ isFunction = (f) -> 'function' is typeof f
 
 isFuture = (a) -> if a?.isFuture then yes else no
 
+resolve = (a, go) ->
+  if isFuture a
+    a go
+  else
+    go null, a
+
 fork = (f, args=[]) ->
   throw new Error "Not a function." unless isFunction f
   self = (go) ->
@@ -173,6 +179,7 @@ forkjoin =
   task: createTask
   async: async
   isFuture: isFuture
+  resolve: resolve
   seq: seq
   collect: collect
   map: map

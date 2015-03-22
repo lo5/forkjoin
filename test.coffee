@@ -28,6 +28,20 @@ test 'isFuture', (t) ->
   sum = add 36, 6
   t.ok fj.isFuture sum
 
+test 'resolve', (t) ->
+  t.plan 4
+
+  add = fj.task (a, b, go) -> go null, a + b
+  sum = add 36, 6
+
+  fj.resolve sum, (error, answer) ->
+    t.equal error, null
+    t.equal answer, 42
+
+  fj.resolve 42, (error, answer) ->
+    t.equal error, null
+    t.equal answer, 42
+
 test 'fork non-function', (t) ->
   t.plan 1
   t.throws -> fj.fork undefined
