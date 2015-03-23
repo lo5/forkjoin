@@ -60,7 +60,7 @@ join = (args, go) ->
   results = []
 
   for arg, i in args
-    if arg?.isFuture
+    if isFuture arg
       tasks.push future: arg, resultIndex: i
     else
       results[i] = arg
@@ -173,9 +173,17 @@ get = (obj, attributes...) ->
   else
     fork (go) -> go null, getProperty obj, attributes
 
+lift = (futures..., f) ->
+  fork (go) ->
+    join futures, (error, results) ->
+      if error
+        go error
+      else
+        go null, f.apply null, results
+
 forkjoin =
   fork: (f, args...) -> fork f, args
-  join: (args..., go) -> join args, go
+  join: (args..., go) -> join args, go #TODO go should be variadic
   task: createTask
   async: async
   isFuture: isFuture
@@ -185,6 +193,7 @@ forkjoin =
   map: map
   forEach: forEach
   get: get
+  lift: lift
 
 if window? then window.forkjoin = forkjoin else module.exports = forkjoin
 

@@ -190,6 +190,22 @@ test 'collect', (t) ->
     t.equal error, null
     t.deepEqual wordLengths, [ 3, 4, 5 ]
 
+test 'get attribute - missing attributes', (t) ->
+  t.plan 4
+
+  alwaysUndefined = fj.task fj.async -> undefined
+  alwaysNull = fj.task fj.async -> null
+  always42 = fj.task fj.async -> 42
+
+  (fj.get alwaysUndefined(), 'foo') (error, value) ->
+    t.equal value, undefined
+  (fj.get alwaysNull(), 'foo') (error, value) ->
+    t.equal value, undefined
+  (fj.get always42(), 'foo') (error, value) ->
+    t.equal value, undefined
+  (fj.get always42()) (error, value) ->
+    t.equal value, undefined
+
 test 'get attribute', (t) ->
   t.plan 2
 
@@ -231,6 +247,18 @@ test 'collect - failing futures', (t) ->
   wordLengths (error, wordLengths) ->
     t.equal error.message, 'meh'
 
+test 'lift', (t) ->
+  t.plan 2
+  echo = fj.task fj.async (a) -> a
+  foo = echo 'foo'
+  bar = echo 'bar'
+  baz = echo 'baz'
+  joined = fj.lift foo, bar, baz, (foo, bar, baz) ->
+    foo + bar + baz
+  
+  joined (error, result) ->
+    t.equal error, null
+    t.equal result, 'foobarbaz'
 
 test 'wordcount example', (t) ->
   t.plan 1
