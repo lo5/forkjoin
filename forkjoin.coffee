@@ -3,11 +3,12 @@ isFunction = (f) -> 'function' is typeof f
 
 isFuture = (a) -> if a?.isFuture then yes else no
 
-resolve = (a, go) ->
-  if isFuture a
-    a go
-  else
-    go null, a
+async = (f) ->
+  (args..., go) ->
+    try 
+      go null, f.apply null, args
+    catch error
+      go error
 
 fork = (continuable, args=[]) ->
   throw new Error "Not a function." unless isFunction continuable
@@ -85,12 +86,9 @@ join = (args, go) ->
       return
   return
 
-async = (f) ->
-  (args..., go) ->
-    try 
-      go null, f.apply null, args
-    catch error
-      go error
+resolve = (args..., go) ->
+  join args, (error, results) ->
+    go.apply null, [error].concat results
 
 createTask = (continuable) ->
   throw new Error "Not a function." unless isFunction continuable
