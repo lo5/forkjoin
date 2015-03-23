@@ -135,7 +135,7 @@ test 'join - empty', (t) ->
     t.equal error, null
     t.deepEqual result, []
 
-test.only 'join - future of futures', (t) ->
+test 'join - future of futures', (t) ->
   t.plan 2
 
   square = fj.task fj.async (a) -> a * a
@@ -144,7 +144,7 @@ test.only 'join - future of futures', (t) ->
 
   twoPow16 = pow16 2
 
-  fj.resolve twoPow16, (error, result) ->
+  twoPow16 (error, result) ->
     t.equal error, null
     t.equal result, Math.pow 2, 16
 

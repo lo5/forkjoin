@@ -3,6 +3,12 @@ isFunction = (f) -> 'function' is typeof f
 
 isFuture = (a) -> if a?.isFuture then yes else no
 
+head = (a) ->
+  if a
+    a[0]
+  else
+    undefined
+
 async = (f) ->
   (args..., go) ->
     try 
@@ -12,7 +18,15 @@ async = (f) ->
 
 fork = (continuable, args=[]) ->
   throw new Error "Not a function." unless isFunction continuable
+
   self = (go) ->
+    join [ self ], (error, results) ->
+      if error
+        go error
+      else
+        go null, head results
+
+  self.evaluate = (go) ->
     hasContinuation = isFunction go
     if self.settled
       # proceed with cached error/result
@@ -71,18 +85,22 @@ join = (args, go) ->
   settled = no
 
   tasks.forEach (task) ->
-    task.future.call null, (error, result) ->
+    task.future.evaluate (error, result) ->
       return if settled
       if error
         settled = yes
         go error
       else
-        join [ result ], (error, [ result ]) ->
-          results[task.resultIndex] = result
-          resultCount++
-          if resultCount is tasks.length
+        join [ result ], (error, localResults) ->
+          if error
             settled = yes
-            go null, results
+            go error
+          else
+            results[task.resultIndex] = head localResults
+            resultCount++
+            if resultCount is tasks.length
+              settled = yes
+              go null, results
       return
   return
 
@@ -95,6 +113,7 @@ createTask = (continuable) ->
   (args...) ->
     fork continuable, args
 
+# [ Future<T> ] -> Future<[T]>
 seq = (_futures) ->
   fork (go) ->
     futures = _futures.slice 0
@@ -114,14 +133,17 @@ seq = (_futures) ->
     do next
     return
 
+# [ Future<T> ] -> Future<[T]>
 collect = (futures) ->
   fork join, [ futures ]
 
-map = (array, createFuture) ->
-  collect (createFuture element for element in array)
+# ([T], ((T) -> Future<T>)) -> Future<[T]>
+map = (array, defer) ->
+  collect (defer element for element in array)
 
-forEach = (array, createFuture) ->
-  seq (createFuture element for element in array)
+# ([T], ((T) -> Future<T>)) -> Future<[T]>
+forEach = (array, defer) ->
+  seq (defer element for element in array)
 
 lift = (futures..., f) ->
   fork (go) ->
