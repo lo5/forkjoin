@@ -159,9 +159,28 @@
 
   test('join - empty', function(t) {
     t.plan(2);
-    return fj.join(function(error, result) {
+    return fj.join([], function(error, result) {
       t.equal(error, null);
       return t.deepEqual(result, []);
+    });
+  });
+
+  test('join - future of futures', function(t) {
+    var pow16, pow4, square, twoPow16;
+    t.plan(2);
+    square = fj.task(fj.async(function(a) {
+      return a * a;
+    }));
+    pow4 = fj.task(fj.async(function(a) {
+      return square(square(a));
+    }));
+    pow16 = fj.task(fj.async(function(a) {
+      return pow4(pow4(a));
+    }));
+    twoPow16 = pow16(2);
+    return twoPow16(function(error, result) {
+      t.equal(error, null);
+      return t.equal(result, Math.pow(2, 16));
     });
   });
 
@@ -248,54 +267,6 @@
     });
   });
 
-  test('get attribute - missing attributes', function(t) {
-    var always42, alwaysNull, alwaysUndefined;
-    t.plan(4);
-    alwaysUndefined = fj.task(fj.async(function() {
-      return void 0;
-    }));
-    alwaysNull = fj.task(fj.async(function() {
-      return null;
-    }));
-    always42 = fj.task(fj.async(function() {
-      return 42;
-    }));
-    (fj.get(alwaysUndefined(), 'foo'))(function(error, value) {
-      return t.equal(value, void 0);
-    });
-    (fj.get(alwaysNull(), 'foo'))(function(error, value) {
-      return t.equal(value, void 0);
-    });
-    (fj.get(always42(), 'foo'))(function(error, value) {
-      return t.equal(value, void 0);
-    });
-    return (fj.get(always42()))(function(error, value) {
-      return t.equal(value, void 0);
-    });
-  });
-
-  test('get attribute', function(t) {
-    var actual, compute, square;
-    t.plan(2);
-    compute = fj.task(function(value, go) {
-      return go(null, {
-        foo: {
-          bar: {
-            baz: value
-          }
-        }
-      });
-    });
-    square = fj.task(fj.async(function(a) {
-      return a * a;
-    }));
-    actual = square(fj.get(compute(10), 'foo', 'bar', 'baz'));
-    return actual(function(error, value) {
-      t.equal(error, null);
-      return t.equal(value, 100);
-    });
-  });
-
   test('seq - failing futures', function(t) {
     var i, lengthOf, wordAt, wordLengths, words;
     t.plan(1);
@@ -357,6 +328,25 @@
     return joined(function(error, result) {
       t.equal(error, null);
       return t.equal(result, 'foobarbaz');
+    });
+  });
+
+  test('math example', function(t) {
+    var answer, square, times10, twice;
+    t.plan(2);
+    twice = fj.task(fj.async(function(a) {
+      return a * 2;
+    }));
+    square = fj.task(fj.async(function(a) {
+      return a * a;
+    }));
+    times10 = fj.task(fj.async(function(a) {
+      return a * 10;
+    }));
+    answer = times10(square(twice(4)));
+    return answer(function(error, result) {
+      t.equal(error, null);
+      return t.equal(result, 640);
     });
   });
 

@@ -1,6 +1,6 @@
 {
   "name": "forkjoin",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Fork/Join primitives for async programming (experimental)",
   "main": "forkjoin.js",
   "scripts": {
