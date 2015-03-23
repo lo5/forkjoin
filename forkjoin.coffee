@@ -123,33 +123,6 @@ map = (array, createFuture) ->
 forEach = (array, createFuture) ->
   seq (createFuture element for element in array)
 
-_getProperty = (obj, attributes) ->
-  if obj
-    if attributes.length
-      attribute = attributes.shift()
-      property = obj[attribute]
-      if attributes.length
-        getProperty property, attributes
-      else
-        property
-    else
-      undefined
-  else
-    undefined
-
-getProperty = (obj, attributes) -> _getProperty obj, attributes.slice 0
-
-get = (obj, attributes...) ->
-  if isFuture obj
-    fork (go) ->
-      obj (error, result) ->
-        if error
-          go error
-        else
-          go null, getProperty result, attributes
-  else
-    fork (go) -> go null, getProperty obj, attributes
-
 lift = (futures..., f) ->
   fork (go) ->
     join futures, (error, results) ->
@@ -169,7 +142,6 @@ forkjoin =
   collect: collect
   map: map
   forEach: forEach
-  get: get
   lift: lift
 
 if window? then window.forkjoin = forkjoin else module.exports = forkjoin

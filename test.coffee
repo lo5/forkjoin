@@ -176,7 +176,6 @@ test 'seq', (t) ->
     t.equal error, null
     t.deepEqual wordLengths, [ 3, 4, 5 ]
 
-
 test 'collect', (t) ->
   t.plan 2
 
@@ -189,38 +188,6 @@ test 'collect', (t) ->
   wordLengths (error, wordLengths) ->
     t.equal error, null
     t.deepEqual wordLengths, [ 3, 4, 5 ]
-
-test 'get attribute - missing attributes', (t) ->
-  t.plan 4
-
-  alwaysUndefined = fj.task fj.async -> undefined
-  alwaysNull = fj.task fj.async -> null
-  always42 = fj.task fj.async -> 42
-
-  (fj.get alwaysUndefined(), 'foo') (error, value) ->
-    t.equal value, undefined
-  (fj.get alwaysNull(), 'foo') (error, value) ->
-    t.equal value, undefined
-  (fj.get always42(), 'foo') (error, value) ->
-    t.equal value, undefined
-  (fj.get always42()) (error, value) ->
-    t.equal value, undefined
-
-test 'get attribute', (t) ->
-  t.plan 2
-
-  compute = fj.task (value, go) -> go null,
-    foo:
-      bar:
-        baz: value
-
-  square = fj.task fj.async (a) -> a * a
-
-  actual = square fj.get (compute 10), 'foo', 'bar', 'baz'
-
-  actual (error, value) ->
-    t.equal error, null
-    t.equal value, 100
 
 test 'seq - failing futures', (t) ->
   t.plan 1
