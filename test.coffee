@@ -131,7 +131,7 @@ test 'task - rejected', (t) ->
 
 test 'join - empty', (t) ->
   t.plan 2
-  fj.join (error, result) ->
+  fj.join [], (error, result) ->
     t.equal error, null
     t.deepEqual result, []
 

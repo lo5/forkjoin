@@ -9,8 +9,8 @@ resolve = (a, go) ->
   else
     go null, a
 
-fork = (f, args=[]) ->
-  throw new Error "Not a function." unless isFunction f
+fork = (continuable, args=[]) ->
+  throw new Error "Not a function." unless isFunction continuable
   self = (go) ->
     hasContinuation = isFunction go
     if self.settled
@@ -27,7 +27,7 @@ fork = (f, args=[]) ->
           self.rejected = yes
           go error if hasContinuation
         else
-          f.apply null,
+          continuable.apply null,
             args.concat (error, result) ->
               if error
                 self.error = error
@@ -42,7 +42,7 @@ fork = (f, args=[]) ->
               self.settled = yes
               self.pending = no
 
-  self.method = f
+  self.method = continuable
   self.args = args
   self.fulfilled = no
   self.rejected = no
@@ -85,17 +85,17 @@ join = (args, go) ->
       return
   return
 
-createTask = (f) ->
-  throw new Error "Not a function." unless isFunction f
-  (args...) ->
-    fork f, args
-
 async = (f) ->
   (args..., go) ->
     try 
       go null, f.apply null, args
     catch error
       go error
+
+createTask = (continuable) ->
+  throw new Error "Not a function." unless isFunction continuable
+  (args...) ->
+    fork continuable, args
 
 seq = (_futures) ->
   fork (go) ->
@@ -182,10 +182,10 @@ lift = (futures..., f) ->
         go null, f.apply null, results
 
 forkjoin =
-  fork: (f, args...) -> fork f, args
-  join: (args..., go) -> join args, go #TODO go should be variadic
-  task: createTask
   async: async
+  task: createTask
+  fork: (continuable, args...) -> fork continuable, args
+  join: join
   isFuture: isFuture
   resolve: resolve
   seq: seq
