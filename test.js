@@ -49,6 +49,23 @@
     return t.ok(fj.isFuture(sum));
   });
 
+  test('resolve', function(t) {
+    var add, sum;
+    t.plan(4);
+    add = fj.task(function(a, b, go) {
+      return go(null, a + b);
+    });
+    sum = add(36, 6);
+    fj.resolve(sum, function(error, answer) {
+      t.equal(error, null);
+      return t.equal(answer, 42);
+    });
+    return fj.resolve(42, function(error, answer) {
+      t.equal(error, null);
+      return t.equal(answer, 42);
+    });
+  });
+
   test('fork non-function', function(t) {
     t.plan(1);
     return t.throws(function() {
@@ -231,6 +248,32 @@
     });
   });
 
+  test('get attribute - missing attributes', function(t) {
+    var always42, alwaysNull, alwaysUndefined;
+    t.plan(4);
+    alwaysUndefined = fj.task(fj.async(function() {
+      return void 0;
+    }));
+    alwaysNull = fj.task(fj.async(function() {
+      return null;
+    }));
+    always42 = fj.task(fj.async(function() {
+      return 42;
+    }));
+    (fj.get(alwaysUndefined(), 'foo'))(function(error, value) {
+      return t.equal(value, void 0);
+    });
+    (fj.get(alwaysNull(), 'foo'))(function(error, value) {
+      return t.equal(value, void 0);
+    });
+    (fj.get(always42(), 'foo'))(function(error, value) {
+      return t.equal(value, void 0);
+    });
+    return (fj.get(always42()))(function(error, value) {
+      return t.equal(value, void 0);
+    });
+  });
+
   test('get attribute', function(t) {
     var actual, compute, square;
     t.plan(2);
@@ -296,6 +339,24 @@
     })());
     return wordLengths(function(error, wordLengths) {
       return t.equal(error.message, 'meh');
+    });
+  });
+
+  test('lift', function(t) {
+    var bar, baz, echo, foo, joined;
+    t.plan(2);
+    echo = fj.task(fj.async(function(a) {
+      return a;
+    }));
+    foo = echo('foo');
+    bar = echo('bar');
+    baz = echo('baz');
+    joined = fj.lift(foo, bar, baz, function(foo, bar, baz) {
+      return foo + bar + baz;
+    });
+    return joined(function(error, result) {
+      t.equal(error, null);
+      return t.equal(result, 'foobarbaz');
     });
   });
 
