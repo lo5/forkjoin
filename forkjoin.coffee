@@ -115,28 +115,7 @@ seq = (_futures) ->
     return
 
 collect = (futures) ->
-  fork (go) ->
-    tasks = for future, i in futures
-      index: i
-      future: future
-
-    results = new Array tasks.length
-    resultCount = 0
-    settled = no
-    tasks.forEach (task) ->
-      task.future (error, result) ->
-        return if settled
-        if error
-          settled = yes
-          go error
-        else
-          results[task.index] = result
-          resultCount++
-          if resultCount is tasks.length
-            settled = yes
-            go null, results
-      return
-    return
+  fork join, [ futures ]
 
 map = (array, createFuture) ->
   collect (createFuture element for element in array)
