@@ -135,6 +135,19 @@ test 'join - empty', (t) ->
     t.equal error, null
     t.deepEqual result, []
 
+test.only 'join - future of futures', (t) ->
+  t.plan 2
+
+  square = fj.task fj.async (a) -> a * a
+  pow4 = fj.task fj.async (a) -> square square a
+  pow16 = fj.task fj.async (a) -> pow4 pow4 a
+
+  twoPow16 = pow16 2
+
+  fj.resolve twoPow16, (error, result) ->
+    t.equal error, null
+    t.equal result, Math.pow 2, 16
+
 test 'task - futures', (t) ->
   t.plan 2
 
@@ -226,6 +239,19 @@ test 'lift', (t) ->
   joined (error, result) ->
     t.equal error, null
     t.equal result, 'foobarbaz'
+
+test 'math example', (t) ->
+  t.plan 2
+
+  twice = fj.task fj.async (a) -> a * 2
+  square = fj.task fj.async (a) -> a * a
+  times10 = fj.task fj.async (a) -> a * 10
+  
+  answer = times10 square twice 4
+
+  answer (error, result) ->
+    t.equal error, null
+    t.equal result, 640
 
 test 'wordcount example', (t) ->
   t.plan 1

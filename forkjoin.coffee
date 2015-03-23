@@ -28,20 +28,19 @@ fork = (continuable, args=[]) ->
           self.rejected = yes
           go error if hasContinuation
         else
-          continuable.apply null,
-            args.concat (error, result) ->
-              if error
-                self.error = error
-                self.fulfilled = no
-                self.rejected = yes
-                go error if hasContinuation
-              else
-                self.result = result
-                self.fulfilled = yes
-                self.rejected = no
-                go null, result if hasContinuation
-              self.settled = yes
-              self.pending = no
+          continuable.apply null, args.concat (error, result) ->
+            if error
+              self.error = error
+              self.fulfilled = no
+              self.rejected = yes
+              go error if hasContinuation
+            else
+              self.result = result
+              self.fulfilled = yes
+              self.rejected = no
+              go null, result if hasContinuation
+            self.settled = yes
+            self.pending = no
 
   self.method = continuable
   self.args = args
@@ -78,11 +77,12 @@ join = (args, go) ->
         settled = yes
         go error
       else
-        results[task.resultIndex] = result
-        resultCount++
-        if resultCount is tasks.length
-          settled = yes
-          go null, results
+        join [ result ], (error, [ result ]) ->
+          results[task.resultIndex] = result
+          resultCount++
+          if resultCount is tasks.length
+            settled = yes
+            go null, results
       return
   return
 
