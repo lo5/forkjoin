@@ -19,6 +19,26 @@ async = (f) ->
 fork = (continuable, args=[]) ->
   throw new Error "Not a function." unless isFunction continuable
 
+  _continuations = []
+
+  link = (go) ->
+    if isFunction go
+      found = no
+      for continuation in _continuations
+        if continuation is go
+          found = yes
+      unless found
+        _continuations.push go
+    return
+
+  propagate = ->
+    while go = _continuations.shift()
+      if self.rejected
+        go self.error
+      else
+        go null, self.result
+    return
+
   self = (go) ->
     join [ self ], (error, results) ->
       if error
@@ -27,32 +47,35 @@ fork = (continuable, args=[]) ->
         go null, head results
 
   self.evaluate = (go) ->
-    hasContinuation = isFunction go
+    link go
     if self.settled
       # proceed with cached error/result
-      if self.rejected
-        go self.error if hasContinuation
-      else
-        go null, self.result if hasContinuation
+      do propagate
+    else if self.evaluating
+      # no op
     else
+      self.evaluating = yes
       join args, (error, args) ->
         if error
           self.error = error
           self.fulfilled = no
           self.rejected = yes
-          go error if hasContinuation
+          self.evaluating = no
+          do propagate
         else
           continuable.apply null, args.concat (error, result) ->
             if error
               self.error = error
               self.fulfilled = no
               self.rejected = yes
-              go error if hasContinuation
+              self.evaluating = no
+              do propagate
             else
               self.result = result
               self.fulfilled = yes
               self.rejected = no
-              go null, result if hasContinuation
+              self.evaluating = no
+              do propagate
             self.settled = yes
             self.pending = no
 
@@ -62,7 +85,7 @@ fork = (continuable, args=[]) ->
   self.rejected = no
   self.settled = no
   self.pending = yes
-
+  self.evaluating = no
   self.isFuture = yes
 
   self
