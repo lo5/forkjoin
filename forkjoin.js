@@ -37,13 +37,39 @@
   };
 
   fork = function(continuable, args) {
-    var self;
+    var _continuations, link, propagate, self;
     if (args == null) {
       args = [];
     }
     if (!isFunction(continuable)) {
       throw new Error("Not a function.");
     }
+    _continuations = [];
+    link = function(go) {
+      var continuation, found, j, len;
+      if (isFunction(go)) {
+        found = false;
+        for (j = 0, len = _continuations.length; j < len; j++) {
+          continuation = _continuations[j];
+          if (continuation === go) {
+            found = true;
+          }
+        }
+        if (!found) {
+          _continuations.push(go);
+        }
+      }
+    };
+    propagate = function() {
+      var go;
+      while (go = _continuations.shift()) {
+        if (self.rejected) {
+          go(self.error);
+        } else {
+          go(null, self.result);
+        }
+      }
+    };
     self = function(go) {
       return join([self], function(error, results) {
         if (error) {
@@ -54,43 +80,34 @@
       });
     };
     self.evaluate = function(go) {
-      var hasContinuation;
-      hasContinuation = isFunction(go);
+      link(go);
       if (self.settled) {
-        if (self.rejected) {
-          if (hasContinuation) {
-            return go(self.error);
-          }
-        } else {
-          if (hasContinuation) {
-            return go(null, self.result);
-          }
-        }
+        return propagate();
+      } else if (self.evaluating) {
+
       } else {
+        self.evaluating = true;
         return join(args, function(error, args) {
           if (error) {
             self.error = error;
             self.fulfilled = false;
             self.rejected = true;
-            if (hasContinuation) {
-              return go(error);
-            }
+            self.evaluating = false;
+            return propagate();
           } else {
             return continuable.apply(null, args.concat(function(error, result) {
               if (error) {
                 self.error = error;
                 self.fulfilled = false;
                 self.rejected = true;
-                if (hasContinuation) {
-                  go(error);
-                }
+                self.evaluating = false;
+                propagate();
               } else {
                 self.result = result;
                 self.fulfilled = true;
                 self.rejected = false;
-                if (hasContinuation) {
-                  go(null, result);
-                }
+                self.evaluating = false;
+                propagate();
               }
               self.settled = true;
               return self.pending = false;
@@ -105,6 +122,7 @@
     self.rejected = false;
     self.settled = false;
     self.pending = true;
+    self.evaluating = false;
     self.isFuture = true;
     return self;
   };
